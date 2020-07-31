@@ -5,13 +5,20 @@
  */
 function Game() {
     this.frames = [];
-    this.currentRoll = 0;
+    this.currentFrame = 0;
 }
 
 Game.prototype.addRoll = function(pins) {
 
-    this.frames[this.currentRoll] = pins;
-    this.currentRoll++;
+    if (typeof this.frames[this.currentFrame] === 'undefined') {
+        this.frames[this.currentFrame] = new Frame();
+    }
+
+    this.frames[this.currentFrame].addRoll(pins);
+
+    if (this.frames[this.currentFrame].isFinished()) {
+        this.currentFrame++;
+    }
 };
 
 Game.prototype.frames = function() {
@@ -20,19 +27,20 @@ Game.prototype.frames = function() {
 
 Game.prototype.totalScore = function() {
     let score = 0;
-    let index = 0;
 
     for (let i = 0; i < 10; i++) {
 
-        // Spare
-        if ((this.frames[index] + this.frames[index + 1]) === 10) {
-            score += 10 + this.frames[index + 2];
-
-        } else {
-            score += this.frames[index] + this.frames[index + 1];
+        // Strike
+        if (this.frames[i].isStrike()) {
+            score += 10 + this.frames[i + 1].score;
         }
-
-        index += 2;
+        // Spare
+        else if (this.frames[i].isSpare()) {
+            score += 10 + this.frames[i + 1].pinsRolled[0];
+        }
+        else {
+            score += this.frames[i].score;
+        }
     }
 
     return score;
@@ -52,8 +60,24 @@ Game.prototype.over = function() {
  * @constructor
  */
 function Frame() {
+    this.pinsRolled = [];
+    this.score = 0;
 }
 
-Frame.prototype.pinsRolled = [];
-Frame.prototype.score = 0;
+Frame.prototype.addRoll = function (pins) {
+    this.pinsRolled.push(pins);
+    this.score += pins;
+};
+
+Frame.prototype.isSpare = function () {
+    return (this.pinsRolled.length === 2 && this.score === 10);
+};
+
+Frame.prototype.isStrike = function () {
+    return (this.pinsRolled.length === 1 && this.score === 10);
+};
+
+Frame.prototype.isFinished = function () {
+    return (this.score === 10 || this.pinsRolled.length === 2);
+};
 
